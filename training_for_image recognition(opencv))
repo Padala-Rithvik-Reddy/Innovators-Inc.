@@ -1,0 +1,49 @@
+import cv2
+import os
+import time
+
+# Create dataset directory if not exists
+dataset_path = "dataset"
+os.makedirs(dataset_path, exist_ok=True)
+
+def collect_images(person_name, num_images=50):
+    person_path = os.path.join(dataset_path, person_name)
+    os.makedirs(person_path, exist_ok=True)
+    
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Ensures smooth webcam access
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
+        return
+    
+    count = 0
+    print(f"Collecting images for {person_name}. Press 'q' to stop early.")
+    time.sleep(3)  # Give time to adjust before capturing
+    
+    while count < num_images:
+        ret, frame = cap.read()
+        if not ret:
+            print("Failed to capture image")
+            break
+        
+        img_path = os.path.join(person_path, f"{count}.jpg")
+        if cv2.imwrite(img_path, frame):
+            print(f"Saved: {img_path}")
+        else:
+            print(f"Failed to save: {img_path}")
+        
+        count += 1
+        
+        cv2.putText(frame, f"Capturing {count}/{num_images}", (50, 50), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.imshow("Face Capture", frame)
+        
+        if cv2.waitKey(100) & 0xFF == ord('q'):
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    print(f"Collected {count} images for {person_name}!")
+
+if __name__ == "__main__":
+    person_name = input("Enter person's name: ")
+    collect_images(person_name)
