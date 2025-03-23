@@ -1,0 +1,185 @@
+import os
+import google.generativeai as genai
+import speech_recognition as sr
+import pyttsx3
+import time 
+import sys
+
+from adafruit_hid.keycode import Keycode
+from adafruit_hid.keyboard import Keyboard
+import usb_hid
+keyboard = Keyboard(usb_hid.devices)
+
+keys = {
+    "Shift": Keycode.SHIFT,
+    "Ctrl": Keycode.CONTROL,
+    "Alt": Keycode.ALT,
+    "Win": Keycode.GUI,
+    "F1": Keycode.F1,
+    "F2": Keycode.F2,
+    "F3": Keycode.F3,
+    "F4": Keycode.F4,
+    "F5": Keycode.F5,
+    "F6": Keycode.F6,
+    "F11": Keycode.F11,
+    "F12": Keycode.F12,
+    "0": Keycode.ZERO,
+    "1": Keycode.ONE,
+    "2": Keycode.TWO,
+    "3": Keycode.THREE,
+    "4": Keycode.FOUR,
+    "5": Keycode.FIVE,
+    "6": Keycode.SIX,
+    "7": Keycode.SEVEN,
+    "8": Keycode.EIGHT,
+    "9": Keycode.NINE,
+
+    "Enter": Keycode.ENTER,
+    "Esc": Keycode.ESCAPE,
+    "Backspace": Keycode.BACKSPACE,
+    "Tab": Keycode.TAB,
+    "Caps Lock": Keycode.CAPS_LOCK,
+    "Space": Keycode.SPACEBAR,
+    "Print Screen": Keycode.PRINT_SCREEN,
+    "Insert": Keycode.INSERT,
+    "Delete": Keycode.DELETE,
+    "Home": Keycode.HOME,
+    "End": Keycode.END,
+    "Page Up": Keycode.PAGE_UP,
+    "Page Down": Keycode.PAGE_DOWN,
+    
+    # Arrow keys
+    "Up Arrow": Keycode.UP_ARROW,
+    "Down Arrow": Keycode.DOWN_ARROW,
+    "Left Arrow": Keycode.LEFT_ARROW,
+    "Right Arrow": Keycode.RIGHT_ARROW,
+
+    "Num Lock": Keycode.KEYPAD_NUMLOCK,
+
+    # Numpad keys
+    "Keypad 0": Keycode.KEYPAD_ZERO,
+    "Keypad 1": Keycode.KEYPAD_ONE,
+    "Keypad 2": Keycode.KEYPAD_TWO,
+    "Keypad 3": Keycode.KEYPAD_THREE,
+    "Keypad 4": Keycode.KEYPAD_FOUR,
+    "Keypad 5": Keycode.KEYPAD_FIVE,
+    "Keypad 6": Keycode.KEYPAD_SIX,
+    "Keypad 7": Keycode.KEYPAD_SEVEN,
+    "Keypad 8": Keycode.KEYPAD_EIGHT,
+    "Keypad 9": Keycode.KEYPAD_NINE,
+
+    "/": Keycode.KEYPAD_FORWARD_SLASH,
+    "*": Keycode.KEYPAD_ASTERISK,
+    "-": Keycode.KEYPAD_MINUS,
+    "+": Keycode.KEYPAD_PLUS,
+
+    "Win + R": [Keycode.GUI, Keycode.R],
+    "Win + S": [Keycode.GUI, Keycode.S],
+    "Win + D": [Keycode.GUI, Keycode.D],
+    "Win + X": [Keycode.GUI, Keycode.X],
+    "Win + E": [Keycode.GUI, Keycode.E],
+    "Win + P": [Keycode.GUI, Keycode.P],
+
+    "Ctrl + Alt + Del": [Keycode.CONTROL, Keycode.ALT, Keycode.DELETE],
+    "Ctrl + Shift + Esc": [Keycode.CONTROL, Keycode.SHIFT, Keycode.ESCAPE],
+    "Alt + Tab": [Keycode.ALT, Keycode.TAB],
+    "Alt + F4": [Keycode.ALT, Keycode.F4],
+    "Ctrl + Shift + N": [Keycode.CONTROL, Keycode.SHIFT, Keycode.N],
+}
+
+alph = {
+    "A": Keycode.A, "B": Keycode.B, "C": Keycode.C, "D": Keycode.D,
+    "E": Keycode.E, "F": Keycode.F, "G": Keycode.G, "H": Keycode.H,
+    "I": Keycode.I, "J": Keycode.J, "K": Keycode.K, "L": Keycode.L,
+    "M": Keycode.M, "N": Keycode.N, "O": Keycode.O, "P": Keycode.P,
+    "Q": Keycode.Q, "R": Keycode.R, "S": Keycode.S, "T": Keycode.T,
+    "U": Keycode.U, "V": Keycode.V, "W": Keycode.W, "X": Keycode.X,
+    "Y": Keycode.Y, "Z": Keycode.Z
+}
+
+
+os.environ["API_KEY"] = "AIzaSyBtLcsChEWsqT19d5MIRI3x_TqOx3mMT2E"
+genai.configure(api_key=os.environ["API_KEY"])
+
+engine = pyttsx3.init()
+a="Please send me a list only containing the key combinations in order, so that it accomplishes the command in the Windows operating system for the following text and please don't provide any additional information\n"
+
+def SpeakText(command):
+    engine.say(command)
+    engine.runAndWait()
+
+
+r = sr.Recognizer()
+
+def get_ai_response(input_text, retries=3):
+    """
+    Generates an AI response for the given input_text.
+    Retries a few times in case of delays or errors.
+    """
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    for _ in range(retries):
+        try:
+            response = model.generate_content(input_text)
+            return response.text
+        except Exception as e:
+            print(f"Error generating response: {e}. Retrying...")
+            time.sleep(2) 
+    return "Sorry, I'm having trouble generating a response."
+
+print("Start speaking. Say 'stop' to end the conversation.")
+
+def type(task):
+    for char in task: 
+        try:
+            if char == " ":
+                keyboard.press(Keycode.SPACE)
+                time.sleep(0.1)
+                keyboard.release(Keycode.SPACE)
+            elif char.upper() in alph:
+                keyboard.press(alph[char.upper()])
+                time.sleep(0.1)
+                keyboard.release(alph[char.upper()])
+        except Exception as e:
+            print(f"Error while pressing the key: {e}", file=sys.stderr)
+
+def press(list):
+    for i in list:
+        try:
+            if i in keys:
+                keyboard.press(keys[i])
+                time.sleep(0.2)
+                keyboard.release(keys[i])
+            else:
+                type(i)
+        except Exception as e:
+            print(f"Error pressing the command: {e}")
+
+
+while True:
+    try:
+        with sr.Microphone() as source2:
+            r.adjust_for_ambient_noise(source2, duration=0.2)            
+            print("Listening...")
+            audio2 = r.listen(source2)
+            
+            MyText = r.recognize_google(audio2).lower()
+            print(f"You said: {MyText}")
+            
+            if "stop" in MyText.split():
+                print("Ending the conversation. Goodbye!")
+                SpeakText("Ending the conversation. Goodbye!")
+                break
+            
+            response_text = get_ai_response(a+MyText)
+            print(f"AI Response: {response_text}")
+            SpeakText(response_text)
+            output=response_text.split()
+            press(output)
+    
+    except sr.UnknownValueError:
+        print("Sorry, Please speak again.")
+        SpeakText("Sorry,Please speak again.")
+    
+    except sr.RequestError as e:
+        print(f"Could not request results; {e}")
+        SpeakText("Sorry, there is some problem regarding connection.")
